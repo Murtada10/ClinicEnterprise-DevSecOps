@@ -7,3 +7,4 @@ venv/
 .vscode/
 *.parquet
 *.log
+.venv-linux/
