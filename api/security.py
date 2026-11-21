@@ -24,3 +24,5 @@ def verify_api_key(provided_key: str | None = Security(api_key_header)) -> str:
         )
 
     return provided_key
+
+

@@ -54,6 +54,16 @@ def dbre_health(
     return service.get_database_health()
 
 
+# @app.post("/de/trigger-parquet-export")
+# def trigger_parquet_export(_: str = Security(verify_api_key)):
+#     return {"status": "accepted", "detail": "Parquet export triggered."}
+
 @app.post("/de/trigger-parquet-export")
 def trigger_parquet_export(_: str = Security(verify_api_key)):
-    return {"status": "accepted", "detail": "Parquet export triggered."}
+    return run_parquet_export_stub()
+
+def run_parquet_export_stub() -> dict[str, str]:
+    return {
+        "status": "accepted",
+        "detail": "Parquet export stub invoked.",
+    }

@@ -10,9 +10,11 @@ class DatabaseHealthRepository:
             FROM sys.dm_exec_sessions
             WHERE is_user_process = 1
         """
-        cursor = self.db.get_cursor()
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
         cursor.execute(query)
         row = cursor.fetchone()
+        
 
         return {
             "total_sessions": row[0] if row else 0,
