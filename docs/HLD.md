@@ -1,3 +1,6 @@
+# HLD
+
+```text
 [ SQL Server 2022 ]  <-- The Database (External)
        ↑ ↓
        ↑ ↓ (pyodbc secure connection)
@@ -26,3 +29,4 @@
 [ Entry Point / Runner ]
   File: main.py
   Job:  The boss. It orchestrates everything. It opens the connection, gives it to the repository, asks for a patient, and prints the result.
+```

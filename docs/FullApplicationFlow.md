@@ -1,3 +1,6 @@
+# FullApplicationFlow
+
+```text
 Incoming Request / Trigger
        │
        ├─── [Path A: API Requests] ─────────────────────────────────────────┐
@@ -28,3 +31,4 @@ Incoming Request / Trigger
        │       - `models/` defines schemas / data structures
        │       - `infrastructure/` manages DB connections / low-level adapters
        └────────────────────────────────────────────────────────────────────┘
+```
