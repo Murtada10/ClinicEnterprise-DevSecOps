@@ -2,17 +2,17 @@
 
 ![ClinicEnterprise CI](https://github.com/Murtada10/ClinicEnterprise-DevSecOps/actions/workflows/ci.yml/badge.svg)
 
-> **Project Status:** `Active Development (Phase 1 — Core Pipeline, Ingestion & DBRE Control Plane Live)`  
+> **Project Status:** `Active Development (Phase 1 — Core Pipeline, 11-Table Relational Schema & DBRE Control Plane Live)`  
 > An end-to-end **Database Reliability Engineering (DBRE)** and **Secure Data Engineering Platform** blueprint, transitioning a Python extraction engine into a 7-tier, DevSecOps-hardened, and highly available data ecosystem.
 
 ---
 
 ## 1. Executive Overview
 **ClinicEnterprise** is a personal enterprise-grade engineering platform demonstrating clean Object-Oriented architecture, defense-in-depth data security, and production database reliability across two structured phases:
-- **Phase 1 (Current — Nov 2026):** 7-Tier Python 3.12 OOP Data Pipeline on SQL Server with Pydantic boundary validation, GDPR PII masking, Dependency Injection, parameterized repositories, structured logging, automated `pytest` & `Ruff` SAST gates, Parquet ingestion modules, and a hardened `FastAPI` DBRE control plane (`X-API-Key` auth, `chmod 600` secret isolation, and headless WSL2 Linux `cron` scheduling), with SQL Server TDE and AES envelope encryption hardening next.
+- **Phase 1 (Current — Nov 2026):** 7-Tier Python 3.12 OOP Data Pipeline on an 11-table SQL Server database (benchmarked with **100,000+ patient records**), featuring Pydantic boundary validation, GDPR PII masking, Dependency Injection, parameterized repositories, structured logging, automated `pytest` & `Ruff` SAST gates, Parquet ingestion modules, and a hardened `FastAPI` DBRE control plane (`X-API-Key` auth, `chmod 600` secret isolation, and headless WSL2 Linux `cron` scheduling), with SQL Server TDE and AES envelope encryption hardening next.
 - **Phase 2 (Planned — Dec 2026 – Jan 2027):** Migration to Linux-native **PostgreSQL 16/17 High Availability** (3-node Patroni cluster, HAProxy, PgBouncer), Point-in-Time Recovery (`pgBackRest` + MinIO S3), and full observability (`Prometheus`, `Grafana`, `Loki`).
 
-> **Architecture Documentation:** Full design references are available in [`docs/HLD.md`](docs/HLD.md) and [`docs/FullApplicationFlow.md`](docs/FullApplicationFlow.md).
+> **Architecture & Security Documentation:** Full design and hardening references are available in [`docs/HLD.md`](docs/HLD.md), [`docs/FullApplicationFlow.md`](docs/FullApplicationFlow.md), and [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ---
 
@@ -31,7 +31,7 @@ flowchart TD
 
     subgraph DB ["Data & Reliability Layer"]
         direction LR
-        SQL[("Phase 1: SQL Server<br/>DMVs & Planned TDE")]
+        SQL[("Phase 1: SQL Server<br/>11 Tables, 100K+ Patients & DMVs")]
         PG[("Phase 2: PostgreSQL HA<br/>Patroni + PgBouncer")]
     end
 
@@ -49,7 +49,13 @@ flowchart TD
 
 ---
 
-## 3. Repository Structure
+## 3. Relational Schema & Performance Indexing (100K+ Dataset)
+- **11-Table Normalized Schema (`database/sqlserver/01_schema.sql`):** Models end-to-end clinical, scheduling, pharmacy, and billing workflows across `Patients`, `Doctors`, `Departments`, `ClinicRooms`, `DoctorShifts`, `Appointments`, `MedicalRecords`, `Medications`, `Prescriptions`, `Invoices`, and `PaymentTransactions` (plus `__EFMigrationsHistory`), enforcing referential integrity (`PK`/`FK`) and standardized soft-delete & audit columns (`IsDeleted`, `CreateAt`, `CreateBy`, `ModifiedAt`, `ModifiedBy`).
+- **100,000-Patient Scale & Filtered Indexing (`database/sqlserver/02_indexes.sql`):** Validated against a **100,000-row** `dbo.Patients` dataset. Right-sizes unbounded `nvarchar(max)` lookup fields (`PhoneNumber`, `Email`) and deploys active-record **Filtered Non-Clustered Indexes** (`WHERE IsDeleted = 0`) with covering `INCLUDE` columns (`IX_Patients_Active_Covering`, `IX_Patients_PhoneNumber_Active`, `IX_Patients_Email_Active`, plus active composite indexes on `Appointments` and `Invoices`) to eliminate full scans during API pagination and PII lookups.
+
+---
+
+## 4. Repository Structure
 
 ```text
 ClinicEnterprise-DevSecOps/
@@ -59,9 +65,14 @@ ClinicEnterprise-DevSecOps/
 ├── api/
 │   ├── main.py                                # FastAPI app, DI factory & DBRE/DE endpoints
 │   └── security.py                            # X-API-Key auth using secrets.compare_digest()
+├── database/
+│   └── sqlserver/
+│       ├── 01_schema.sql                      # 11-table relational DDL, PK/FK constraints & audit columns
+│       └── 02_indexes.sql                     # Filtered Non-Clustered Indexes for 100K+ patient dataset
 ├── docs/
 │   ├── HLD.md                                 # High-Level Design blueprint
-│   └── FullApplicationFlow.md                 # End-to-end execution flow documentation
+│   ├── FullApplicationFlow.md                 # End-to-end execution flow documentation
+│   └── SECURITY.md                            # DevSecOps, least-privilege DB & GDPR hardening controls
 ├── infrastructure/
 │   └── database.py                            # SQL Server connection lifecycle via pyodbc & env config
 ├── ingestion/
@@ -93,9 +104,10 @@ ClinicEnterprise-DevSecOps/
 
 ---
 
-## 4. Implementation Roadmap & Progress
+## 5. Implementation Roadmap & Progress
 
 ### Phase 1: 7-Tier Core Python Pipeline (SQL Server)
+- [x] **Relational Schema & 100K+ Indexing:** Formalized 11-table SQL Server DDL (`01_schema.sql`) with soft-delete audit trails and active-record Filtered Indexes (`02_indexes.sql`) benchmarked on **100,000+ patients**.
 - [x] **Tier 1 — Domain Models:** `Patient`, `Doctor`, `Appointment`, and `Invoice` Pydantic models with strict boundary validation, Object Composition, and `masked_phone()` PII protection.
 - [x] **Tier 2 — Infrastructure:** SQL Server connectivity via `pyodbc` and `.env` credential isolation (enforced via `.gitignore` and `.env.example`).
 - [x] **Tier 3 — Repositories:** `PatientRepository`, `DoctorRepository`, `AppointmentRepository`, and `DatabaseHealthRepository` (SQL Server DMVs) using Dependency Injection and 100% parameterized queries (`?`).
@@ -113,8 +125,8 @@ ClinicEnterprise-DevSecOps/
 
 ---
 
-## 5. Core Tech Stack
+## 6. Core Tech Stack
 - **Backend & Data:** Python 3.12, Pydantic, FastAPI, Uvicorn, Pandas, PyArrow (Parquet), `pyodbc` / `psycopg3`
 - **Testing, CI & Security:** `pytest`, `unittest.mock`, GitHub Actions, `Ruff` (SAST), `X-API-Key` (`secrets.compare_digest`), GDPR PII Masking, AES Encryption, SQL Server TDE
-- **Databases & HA:** SQL Server (DMVs, TDE), PostgreSQL 16/17, Patroni, HAProxy, PgBouncer, `pgBackRest`, MinIO (S3)
+- **Databases & HA:** SQL Server (Filtered Indexes, DMVs, TDE), PostgreSQL 16/17, Patroni, HAProxy, PgBouncer, `pgBackRest`, MinIO (S3)
 - **Observability & OS:** Prometheus, Grafana, Promtail / Loki, Ubuntu Linux (WSL2), Linux `cron`
