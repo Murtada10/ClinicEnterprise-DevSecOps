@@ -8,3 +8,9 @@ venv/
 *.parquet
 *.log
 .venv-linux/
+
+.pytest_tmp/
+tempCodeRunnerFile.py
+
+.pytest_tmp/
+tempCodeRunnerFile.py
